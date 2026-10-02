@@ -14,24 +14,6 @@ const D=((HHS.data[HHS.cur.id]||{}).events||[]).map(toLine);
 /* STEP 3 | NAMES. TN = names of event types (A, X, H, E, S). LV = class groups (a = Pre-School, b = I-II, c = III-V, d = VI-VIII, e = IX-XI). Change the words inside the quotes to rename them. */
 const TN={A:'Academic',X:'Exams',H:'Holiday',E:'Event',S:'Sports / Other'},LV={a:'Pre-School (PN–Prep)',b:'I–II',c:'III–V',d:'VI–VIII',e:'IX–XI'};
 
-/* CAMPUS-SPECIFIC CLASSES MAPPING */
-const CAMPUS_CLASSES = {
-  TLC: ['a','a1','a2','b'],                              // Pre-School till Class I
-  IMC: ['a','a1','a2','b','c'],                         // Pre-School till Class II
-  PEC: ['a','a1','a2','b','c'],
-  OLG: ['a','a1','a2','b','c','d','e','f','g','h','i','j','k','l'],
-  OLC: ['a','a1','a2','b','c','d','e','f','g','h','i','j','k','l','n','o'], // Pre-School till XI
-  OLN: ['a','a1','a2','b','c','d','e','f','g','h','i','j'],
-  OLS: ['a','a1','a2','b','c','d','e','f','g','h','i'],
-  SSC: ['j','k','l','m','n','o'],
-  JOH: ['a','a1','a2','b','c','d','e','f','g','h','i'],
-  HS:  ['c','d','e','f','g','h','i','j','k','n','o'],
-  HPP: ['a2','b','c'],
-  HPS: ['a','a1','a2'],
-  FT:  ['a2','b','c','d','e','f','g','h','i','j','k'],
-  SOC: ['b','c','d','e','f','g','h','i','j','k']
-};
-
 /* STEP 4 | CAMPUSES. Two groups: OL (O Level) and M (Matric). Each line is  CODE:'Display name'. Use the CODE in STEP 2. To add a campus, copy a line and give it a new CODE and name. */
 const CG={
   OL:{IMC:'IMC',PEC:'IMC PECHS',OLG:'OLG',OLC:'OLC',OLN:'OLN',OLS:'OLS (O Level School)',SSC:'OLS Senior School & College',JOH:'HHS Johar'},
@@ -106,31 +88,11 @@ function renderDropdowns(){
     cpSel.innerHTML+=`<option value="${c}" ${S.cp.has(c)?'selected':''}>${v}</option>`;
   });
 
-  // Calculate allowed class keys based on currently selected campus(es)
-  let allowedClasses = null;
-  if(S.cp.size > 0) {
-    allowedClasses = new Set();
-    S.cp.forEach(c => {
-      if(CAMPUS_CLASSES[c]) {
-        CAMPUS_CLASSES[c].forEach(clsKey => allowedClasses.add(clsKey));
-      }
-    });
-  }
-
   const lvSel=$('lvSel');
   lvSel.innerHTML='<option value="">All Classes</option>';
   Object.entries(LV).forEach(([k,v])=>{
-    if(!allowedClasses || allowedClasses.has(k)) {
-      lvSel.innerHTML+=`<option value="${k}" ${S.lv.has(k)?'selected':''}>${v}</option>`;
-    }
+    lvSel.innerHTML+=`<option value="${k}" ${S.lv.has(k)?'selected':''}>${v}</option>`;
   });
-
-  // Clean up selected class if it's no longer allowed
-  if(allowedClasses && S.lv.size > 0) {
-    S.lv.forEach(k => {
-      if(!allowedClasses.has(k)) S.lv.delete(k);
-    });
-  }
 }
 
 function renderTabs(){
@@ -413,7 +375,7 @@ document.addEventListener('click',ev=>{
   else if(a==='csv')dl('HHS-calendar-'+(sc==='year'?'year':md(S.c).slice(0,2))+'.csv',csv(scoped(sc==='year'?'year':'month')),'text/csv');
   else if(a==='ics')dl('HHS-calendar.ics',ics(scoped(sc==='year'?'year':'month')),'text/calendar');
   else if(a==='tpl')tpl();else if(a==='expX')expX();else if(a==='doimp')doImp();else if(a==='closeD')dlg.close();
-  else if(a==='newfile'||a==='savefile'){const sv=a==='savefile',n=sv?0:Math.max(1,+$('nY').value-Y0),inc=sv||$('nC').checked,cp=sv\vert{}\vert{}$('nB').checked,y=Y0+n,id=y+'-'+String(y+1).slice(2);
+  else if(a==='newfile'||a==='savefile'){const sv=a==='savefile',n=sv?0:Math.max(1,+$('nY').value-Y0),inc=sv||$('nC').checked,cp=sv||$('nB').checked,y=Y0+n,id=y+'-'+String(y+1).slice(2);
     dl(id+'.js',dataJS(id,y,E.filter(e=>e.cu?inc:cp).map(e=>toJSON(e,n))),'text/javascript');
     if(!sv&&!HHS.years.some(x=>x.id===id))setTimeout(()=>dl('years.js',yearsJS(id,y),'text/javascript'),500);
     if(sv&&(CUS.length||Object.keys(OVR).length)&&confirm('Your changes are now inside the downloaded data file. After you replace the old file with it, the copies saved in this browser would show twice. Clear them now?')){CUS=[];OVR={};saveC();saveO();rebuild();dlg.close();draw()}}
@@ -510,7 +472,8 @@ document.addEventListener('click',ev=>{if(!EMBED)return;const c=ev.target.closes
   openD(`<form method="dialog"><h3>${d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>`+(evs.length?evs.map(e=>`<div class="dayEv" style="--c:var(--${tk(e)})"><b>${e.t}</b><small>${TN[tk(e)]} · ${rng(e,0)} · ${who(e)}${e.st?' · '+SN2[e.st]:''}</small></div>`).join(''):'<p class="hint">No events on this day with the current filters.</p>')+'<div class="acts"><button class="chip" value="cancel">Close</button></div></form>')});
 /* STEP 30 | YEAR PICKER. Fills the Academic year list from data/years.js. Choosing a year reloads the page with ?year=... so each year is a clean, separate calendar. */
 $('yrSel').innerHTML=HHS.years.map(y=>`<option value="${y.id}"${y.id===HHS.cur.id?' selected':''}>${y.label}</option>`).join('');
-$('yrSel').onchange=e=>{location.search='?year='+e.target.value};$('ttl').textContent='HHS Academic & Event Calendar '+HHS.cur.label;document.title='HHS Academic & Event Calendar '+HHS.cur.label;
+$('yrSel').onchange=e=>{location.search='?year='+e.target.value};
+$('ttl').textContent='HHS Academic & Event Calendar '+HHS.cur.label;document.title='HHS Academic & Event Calendar '+HHS.cur.label;
 if(!HHS.data[HHS.cur.id])document.querySelector('main').insertAdjacentHTML('afterbegin','<p style="padding:12px;border:1px solid #b3261e;border-radius:8px">The data file for '+HHS.cur.label+' (data/'+HHS.cur.file+') could not be loaded. Check that it exists in the data folder.</p>');
 /* STEP 28 | START-UP. Draws the calendar for the first time. Keep this line last. */
 draw();
