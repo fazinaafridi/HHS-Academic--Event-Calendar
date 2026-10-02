@@ -37,8 +37,7 @@ const CAMPUS_CLASSES = {
   HPP: ['a2','b','c'],
   HPS: ['a','a1','a2'],
   FT: ['a2','b', 'c', 'd', 'e','f','g','h','i','j','k'],
-  SOC: ['b', 'c', 'd', 'e','f','g','h','i','j','k'],
-
+  SOC: ['b', 'c', 'd', 'e','f','g','h','i','j','k']
 };
 
 
