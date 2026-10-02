@@ -49,7 +49,7 @@ const S={c:(TODAY>=new Date(Y0,6,1)&&TODAY<=new Date(Y0+1,5,30))?TODAY:new Date(
 // Helper to check base filters excluding search term
 const passBaseFilter = e => {
   const matchStream = strs(e).some(x=>S.st.has(x));
-  const matchCampus = !S.cp.size || (e.c.length ? e.c.some(c=>S.cp.has(c)) : true);
+  const matchCampus = !S.cp.size || (e.c.length > 0 && e.c.some(c=>S.cp.has(c)));
   const matchLevel = !S.lv.size || !e.lv || [...e.lv].some(x=>S.lv.has(x));
   return matchStream && matchCampus && matchLevel;
 };
