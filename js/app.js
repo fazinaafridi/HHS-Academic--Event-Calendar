@@ -12,7 +12,7 @@ const toLine=ev=>{const m2=s=>s.slice(5,7)+s.slice(8,10);return m2(ev.d)+(ev.e&&
 const D=((HHS.data[HHS.cur.id]||{}).events||[]).map(toLine);
 
 /* STEP 3 | NAMES. TN = names of event types (A, X, H, E, S). LV = class groups (a = Pre-School, b = I-II, c = III-V, d = VI-VIII, e = IX-XI). Change the words inside the quotes to rename them. */
-const TN={A:'Academic',X:'Exams',H:'Holiday',E:'Event',S:'Sports / Other'},LV={a:'Pre-School (PN–Prep)',b:'I–II',c:'III–V',d:'VI–VIII',e:'IX–XI'};
+const TN={A:'Academic',X:'Exams',H:'Holiday',E:'Event',S:'Sports / Other'},LV={a:'Pre-Nur',a1:'Nur',a2:'Prep',b:'I',c:'II',d:'III',e:'IV',f:'V',g:'VI',h:'VII',i:'VIII',j:'IX',k:'X',l:'XI',m:'IX-AKU',n:'X-AKU',o:'XI-AKU'};
 
 /* STEP 4 | CAMPUSES. Two groups: OL (O Level) and M (Matric). Each line is  CODE:'Display name'. Use the CODE in STEP 2. To add a campus, copy a line and give it a new CODE and name. */
 const CG={
@@ -20,6 +20,27 @@ const CG={
   M:{HS:'High School',HPP:'High School Pre Primary',HPS:'High School Pre School Section',TLC:'TLC',FT:'Fast Track',SOC:'Society Campus'}
 };
 const CN={...CG.OL,...CG.M},CS={};Object.keys(CG).forEach(k=>Object.keys(CG[k]).forEach(c=>CS[c]=k));
+
+/* MAP CLASSES TO CAMPUSES */
+const CAMPUS_CLASSES = {
+  TLC: ['a','a1','a2','b'],        // Pre-School (a) till Class I-II (b)
+  IMC: ['a','a1','a2','b','c'], 
+  PEC: ['a','a1','a2','b','c'],       // Pre-School (a) till Class I-II (b)
+  OLG: ['a','a1','a2', 'b', 'c', 'd', 'e','f','g','h','i','j','k'],
+  OLC: ['a','a1','a2','b', 'c', 'd', 'e','f','g','h','i','j','k','n','o'], // Pre-School (a) through IX-XI (e)
+  OLG: ['a','a1','a2','b', 'c', 'd', 'e','f','g','h','i','j','k','l'],
+  OLN: ['a','a1','a2','b', 'c', 'd', 'e','f','g','h','i','j'],
+  OLS: ['a','a1','a2', 'b', 'c', 'd', 'e','f','g','h','i'],
+  SSC: ['j','k','l','m','n','o'],
+  JOH: ['a','a1','a2', 'b', 'c', 'd', 'e','f','g','h','i'],
+  HS: ['c', 'd', 'e','f','g','h','i','j','k','n','o'],
+  HPP: ['a2','b','c'],
+  HPS: ['a','a1','a2'],
+  FT: ['a2','b', 'c', 'd', 'e','f','g','h','i','j','k'],
+  SOC: ['b', 'c', 'd', 'e','f','g','h','i','j','k'],
+
+};
+
 
 /* STEP 5 | HELPER TOOLS (rarely edited). P turns 1015 into a real date. esc/dec make titles safe to show. parse turns one line of STEP 2 into an event the page can use. */
 const P=s=>{const m=+s.slice(0,2);return new Date(m>=7?Y0:Y0+1,m-1,+s.slice(2))};
@@ -90,8 +111,17 @@ function renderDropdowns(){
 
   const lvSel=$('lvSel');
   lvSel.innerHTML='<option value="">All Classes</option>';
+  
+  // Get active campus (if selected)
+  const activeCampus = [...S.cp][0];
+  const allowedClasses = activeCampus && CAMPUS_CLASSES[activeCampus] 
+    ? CAMPUS_CLASSES[activeCampus] 
+    : Object.keys(LV);
+
   Object.entries(LV).forEach(([k,v])=>{
-    lvSel.innerHTML+=`<option value="${k}" ${S.lv.has(k)?'selected':''}>${v}</option>`;
+    if (allowedClasses.includes(k)) {
+      lvSel.innerHTML+=`<option value="${k}" ${S.lv.has(k)?'selected':''}>${v}</option>`;
+    }
   });
 }
 
@@ -298,7 +328,18 @@ document.addEventListener('change',e=>{
     S.st = (v==='ALL') ? new Set(['OL','M']) : new Set([v]);
     S.cp.clear(); draw();
   }
-  if(e.target.id==='cpSel'){ S.cp.clear(); if(e.target.value) S.cp.add(e.target.value); draw(); }
+  if(e.target.id==='cpSel'){ 
+    S.cp.clear(); 
+    if(e.target.value) {
+      S.cp.add(e.target.value);
+      // Clear selected class if it's not available in the selected campus
+      const allowed = CAMPUS_CLASSES[e.target.value];
+      if (allowed && S.lv.size) {
+        S.lv.forEach(l => { if (!allowed.includes(l)) S.lv.delete(l); });
+      }
+    } 
+    draw(); 
+  }
   if(e.target.id==='lvSel'){ S.lv.clear(); if(e.target.value) S.lv.add(e.target.value); draw(); }
 });
 
