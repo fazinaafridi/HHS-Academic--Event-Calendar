@@ -1,0 +1,95 @@
+<!doctype html>
+<!--
+ HHS CALENDAR (Google Sheet edition) : FILE MAP. See README.md for the full guide.
+   index.html        this page: the layout (headings, buttons, empty boxes)
+   css/styles.css    look and feel (colours, sizes)
+   js/app.js         the program, in numbered STEPs
+   config.js         YOUR SETTINGS: the Google Sheet link and the optional "Suggest an event" link
+   data/fallback.js  a built-in copy of the events, used only if the sheet cannot be reached
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HHS Academic & Event Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<!-- SETTINGS and the built-in fallback copy of the events (the live events come from your Google Sheet). -->
+<script src="config.js"></script>
+<script src="data/fallback.js"></script>
+</head>
+<!-- PART B: PAGE LAYOUT. These are the visible blocks of the page, from top to bottom: heading, type filter chips, search box, Stream/Campus/Class dropdowns, month tabs, buttons row, calendar grid, event list. Some boxes are empty here (cats, cal, overview) because the program in PART C fills them. -->
+<body>
+<main>
+  <!-- Top Heading -->
+  <div class="titlebar"><h1 id="ttl">HHS Academic & Event Calendar</h1><label class="yr">Academic year <select id="yrSel" aria-label="Academic year"></select></label></div>
+  <p class="sub">Every date in order, by month and week. Pick your section to see only what applies to you.</p>
+
+  <!-- Category Filter Pills with Dynamic Numbers -->
+  <div class="bar" id="cats"></div>
+
+  <!-- Search with Live Autocomplete Suggestions -->
+  <div class="bar">
+    <div class="search-wrapper">
+      <input type="search" id="q" placeholder="Search all events (e.g. PTM, Eid, mock)" aria-label="Search events" autocomplete="off">
+      <div class="suggestions-dropdown" id="suggestionsBox"></div>
+    </div>
+    <button class="chip" id="clrBtn">Clear Filters</button>
+  </div>
+
+  <!-- Dropdown Filters Bar -->
+  <div class="dropdown-bar">
+    <div class="filter-item">
+      <label>Stream:</label>
+      <select id="stSel" class="compact-select">
+        <option value="ALL">All Streams</option>
+        <option value="OL">O Level</option>
+        <option value="M">Matric</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <label>Campus:</label>
+      <select id="cpSel" class="compact-select"><option value="">All Campuses</option></select>
+    </div>
+    <div class="filter-item">
+      <label>Class:</label>
+      <select id="lvSel" class="compact-select"><option value="">All Classes</option></select>
+    </div>
+      <div class="filter-item"><label class="chk"><input type="checkbox" id="intChk"> 🔒 Internal events</label></div>
+  <div class="filter-item"><label class="chk" title="Events that do not name a class"><input type="checkbox" id="wideChk"> School-wide events</label></div>
+   <div class="filter-item" style="flex-basis:100%"><span id="viewHint" class="chk-hint"></span></div>
+      </div>
+
+  <!-- Sticky Month Navigation Tabs -->
+  <div class="tabs" id="monthTabs"></div>
+
+  <!-- Calendar Controls Bar -->
+  <div class="cal-controls">
+    <h2 class="month-heading" id="mHeading"></h2>
+    <div class="cal-actions">
+      <button class="chip" data-act="today">Today</button>
+      <button class="chip" data-act="print">Print / Download</button>
+      <button class="chip" id="sugBtn" type="button"> Suggest an event </button>
+      <input type="date" id="directDatePicker" aria-label="Select direct date">
+      <div class="view-picker" id="viewPicker">
+        <button class="view-btn active" data-v="month">Month</button>
+        <button class="view-btn" data-v="week">Week</button>
+        <button class="view-btn" data-v="day">Day</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Grid Display -->
+  <div class="scroll"><div id="cal"></div></div>
+
+  <!-- Detailed Event List Overview -->
+  <div id="overview"></div>
+  <p class="foot" id="srcNote"></p>
+</main>
+
+<dialog id="dlg"></dialog>
+<div id="printArea"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
