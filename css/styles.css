@@ -279,6 +279,13 @@ body.embed .foot{display:none}
   opacity: .55;
   cursor: wait;
 }
+
+@media (max-width: 520px) {
+  .suggest-form .f2 {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== MULTI-SELECT DROPDOWN ===== */
 .ms { position: relative; }
 .ms summary {
@@ -309,12 +316,6 @@ body.embed .foot{display:none}
   display: block; width: 100%; text-align: left; border: 0; background: none;
   color: var(--mute); font-size: 12.5px; padding: 4px 8px 6px; cursor: pointer; text-decoration: underline;
 }
-/* inside the suggestion pop-up the list sits in the flow, so the dialog doesn't clip it */
+/* inside the suggestion pop-up the list sits in the flow, so the dialog does not clip it */
 dialog .ms-panel { position: static; box-shadow: none; max-height: 180px; }
 dialog .ms summary { max-width: none; }
-
-@media (max-width: 520px) {
-  .suggest-form .f2 {
-    grid-template-columns: 1fr;
-  }
-}
