@@ -685,8 +685,32 @@ $('sugBtn').addEventListener('click', () => {
   });
 
   /*
-   * If the current calendar is already filtered to a campus,
-   * preselect that campus in the suggestion form.
+   * Stream first: if a single stream is selected on the main page, preselect it.
+   */
+  if (S.st.size === 1) {
+    const stream = [...S.st][0];
+    $('suggestStream').value = stream === 'OL' ? 'O Levels' : stream === 'M' ? 'Matric' : 'Both';
+  }
+
+  /*
+   * The Campus list follows the chosen Stream: O Levels shows only O Level campuses,
+   * Matric only Matric campuses, Both shows all. Ticked campuses that are no longer
+   * in the list are unticked.
+   */
+  const fillCampus = () => {
+    const box = $('suggestCampus'), panel = box.querySelector('.ms-panel');
+    const keep = new Set([...box.querySelectorAll('input:checked')].map(i => i.value));
+    const sv = $('suggestStream').value;
+    const names = Object.values(sv === 'O Levels' ? CG.OL : sv === 'Matric' ? CG.M : CN);
+    panel.innerHTML = names.map(v =>
+      `<label><input type="checkbox" name="campuses" value="${esc(v)}"${keep.has(v) ? ' checked' : ''}> ${esc(v)}</label>`).join('');
+    msSum(box);
+  };
+  fillCampus();
+  $('suggestStream').addEventListener('change', fillCampus);
+
+  /*
+   * Preselect the campuses and classes currently chosen on the main page.
    */
   [...S.cp].forEach(c=>{
     const i=[...$('suggestCampus').querySelectorAll('input')].find(i=>i.value===CN[c]);
@@ -699,22 +723,6 @@ $('sugBtn').addEventListener('click', () => {
   ['suggestCampus','suggestClass'].forEach(id=>{
     const b=$(id); msSum(b); b.addEventListener('change',()=>msSum(b));
   });
-
-  /*
-   * If a single stream is currently selected,
-   * preselect it.
-   */
-  if (S.st.size === 1) {
-
-    const stream = [...S.st][0];
-
-    $('suggestStream').value =
-      stream === 'OL'
-        ? 'O Levels'
-        : stream === 'M'
-          ? 'Matric'
-          : 'Both';
-  }
 
   /*
    * Submit the suggestion.
