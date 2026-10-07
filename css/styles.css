@@ -319,3 +319,6 @@ body.embed .foot{display:none}
 /* inside the suggestion pop-up the list sits in the flow, so the dialog does not clip it */
 dialog .ms-panel { position: static; box-shadow: none; max-height: 180px; }
 dialog .ms summary { max-width: none; }
+
+/* keep checkbox rows in the suggestion pop-up as compact as on the main page */
+.suggest-form .ms-panel input[type=checkbox] { min-height: 0; width: 16px; height: 16px; padding: 0; }
