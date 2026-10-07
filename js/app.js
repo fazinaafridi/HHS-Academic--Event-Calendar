@@ -338,6 +338,7 @@ document.addEventListener('click',ev=>{
     suggestionsBox.classList.remove('open');
   }
   if(b.dataset.int){ S.int=!S.int; }
+  if(b.dataset.msClear){ (b.dataset.msClear==='cpSel'?S.cp:S.lv).clear(); }
   if(b.dataset.c){
     const k=b.dataset.c;
     S.t.has(k)?S.t.delete(k):S.t.add(k);
@@ -352,6 +353,12 @@ document.addEventListener('click',ev=>{
   draw();
 });
 
+/* Close an open multi-select when you click outside it. */
+document.addEventListener('click',e=>{
+  const path=e.composedPath();
+  document.querySelectorAll('.ms details[open]').forEach(d=>{ if(!path.includes(d.parentElement)) d.open=false; });
+});
+
 /* STEP 15 | WHAT HAPPENS WHEN YOU CHANGE a dropdown (Stream, Campus, Class) or the date picker. */
 document.addEventListener('change',e=>{
   if(e.target.id==='stSel'){
@@ -359,10 +366,17 @@ document.addEventListener('change',e=>{
     S.st = (v==='ALL') ? new Set(['OL','M']) : new Set([v]);
     S.cp.clear(); draw();
   }
-  if(e.target.id==='cpSel'){ S.cp.clear(); if(e.target.value) S.cp.add(e.target.value); [...S.lv].forEach(k=>{ if(S.cp.size && !campusCls().has(k)) S.lv.delete(k); }); draw(); }
+  if(e.target.closest('#cpSel')&&e.target.type==='checkbox'){
+    e.target.checked?S.cp.add(e.target.value):S.cp.delete(e.target.value);
+    [...S.lv].forEach(k=>{ if(S.cp.size && !campusCls().has(k)) S.lv.delete(k); });
+    draw();
+  }
       if(e.target.id==='intChk'){ S.int=e.target.checked; draw(); }
     if(e.target.id==='wideChk'){ S.wide=e.target.checked; draw(); }
-  if(e.target.id==='lvSel'){ S.lv.clear(); if(e.target.value) S.lv.add(e.target.value); draw(); }
+  if(e.target.closest('#lvSel')&&e.target.type==='checkbox'){
+    e.target.checked?S.lv.add(e.target.value):S.lv.delete(e.target.value);
+    draw();
+  }
 });
 
 
@@ -410,6 +424,22 @@ $('yrSel').onchange=e=>{location.search='?year='+e.target.value};
 $('ttl').textContent='HHS Academic & Event Calendar '+lab(Y0);document.title='HHS Academic & Event Calendar '+lab(Y0);
 /* STEP 30A | EVENT SUGGESTION POPUP */
 
+/* Multi-select box for the suggestion pop-up (checkbox list). msSum updates the summary text. */
+const msBox=(id,name,label,allLabel,items)=>`
+  <div class="f"><label>${label}</label>
+    <div class="ms" id="${id}" data-all="${esc(allLabel)}">
+      <details><summary>${esc(allLabel)}</summary>
+        <div class="ms-panel">
+          ${items.map(v=>`<label><input type="checkbox" name="${name}" value="${esc(v)}"> ${esc(v)}</label>`).join('')}
+        </div>
+      </details>
+    </div>
+  </div>`;
+const msSum=box=>{
+  const v=[...box.querySelectorAll('input:checked')].map(i=>i.value);
+  box.querySelector('summary').textContent=!v.length?box.dataset.all:v.length<=2?v.join(', '):v.length+' selected';
+};
+
 const suggestionForm = () => {
 
   const typeOptions = [
@@ -425,18 +455,6 @@ const suggestionForm = () => {
     ['Matric', 'Matric'],
     ['O Levels', 'O Levels']
   ];
-
-  const campusOptions = Object.entries(CN)
-    .map(([code, name]) =>
-      `<option value="${esc(name)}">${esc(name)}</option>`
-    )
-    .join('');
-
-  const classOptions = Object.entries(LV)
-    .map(([code, name]) =>
-      `<option value="${esc(name)}">${esc(name)}</option>`
-    )
-    .join('');
 
   return `
     <form method="dialog"
@@ -516,27 +534,8 @@ const suggestionForm = () => {
         </select>
       </div>
 
-      <div class="f">
-        <label for="suggestCampus">
-          Campus
-        </label>
-
-        <select id="suggestCampus" name="campuses">
-          <option value="">All Campuses</option>
-          ${campusOptions}
-        </select>
-      </div>
-
-      <div class="f">
-        <label for="suggestClass">
-          Class
-        </label>
-
-        <select id="suggestClass" name="classes">
-          <option value="">All Classes</option>
-          ${classOptions}
-        </select>
-      </div>
+      ${msBox('suggestCampus','campuses','Campus','All Campuses',Object.values(CN))}
+      ${msBox('suggestClass','classes','Class','All Classes',Object.values(LV))}
 
       <div class="f2">
 
@@ -629,15 +628,10 @@ async function submitSuggestion(form) {
     form.elements.stream.value
   );
 
-  data.set(
-    'campuses',
-    form.elements.campuses.value
-  );
+  const pick=n=>[...form.querySelectorAll(`input[name="${n}"]:checked`)].map(i=>i.value).join(', ');
+  data.set('campuses', pick('campuses'));
 
-  data.set(
-    'classes',
-    form.elements.classes.value
-  );
+  data.set('classes', pick('classes'));
 
   data.set(
     'includeWeekends',
@@ -694,15 +688,17 @@ $('sugBtn').addEventListener('click', () => {
    * If the current calendar is already filtered to a campus,
    * preselect that campus in the suggestion form.
    */
-  if (S.cp.size === 1) {
-    const campus = [...S.cp][0];
-
-    if ($('suggestCampus').querySelector(
-      `option[value="${CSS.escape(CN[campus] || '')}"]`
-    )) {
-      $('suggestCampus').value = CN[campus];
-    }
-  }
+  [...S.cp].forEach(c=>{
+    const i=[...$('suggestCampus').querySelectorAll('input')].find(i=>i.value===CN[c]);
+    if(i) i.checked=true;
+  });
+  [...S.lv].forEach(k=>{
+    const i=[...$('suggestClass').querySelectorAll('input')].find(i=>i.value===LV[k]);
+    if(i) i.checked=true;
+  });
+  ['suggestCampus','suggestClass'].forEach(id=>{
+    const b=$(id); msSum(b); b.addEventListener('change',()=>msSum(b));
+  });
 
   /*
    * If a single stream is currently selected,
