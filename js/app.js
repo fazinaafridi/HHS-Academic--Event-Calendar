@@ -131,22 +131,28 @@ function renderCats(){
   `).join('')+(nInt||S.int?`<button class="chip cat intchip" aria-pressed="${S.int}" data-int="1" title="Show events meant only for campus/internal use">\u{1F512} Internal <span class="cat-count">${nInt}</span></button>`:'');
 }
 
-function renderDropdowns(){
-  const cpSel=$('cpSel');
-  cpSel.innerHTML='<option value="">All Campuses</option>';
-  const activeCampuses = new Map();
-  Object.keys(CG).filter(k=>S.st.has(k)).forEach(k=>Object.entries(CG[k]).forEach(([c,v])=>activeCampuses.set(c,v)));
-  activeCampuses.forEach((v,c)=>{
-    cpSel.innerHTML+=`<option value="${c}" ${S.cp.has(c)?'selected':''}>${v}</option>`;
-  });
+/* msRender draws a multi-select (a checkbox list inside <details>) and keeps it open/scrolled across redraws. */
+const msRender=(box,allLabel,items,sel)=>{
+  const old=box.querySelector('details'),open=old&&old.open,sc=old?old.querySelector('.ms-panel').scrollTop:0;
+  const names=items.filter(([k])=>sel.has(k)).map(([,v])=>v);
+  const txt=!names.length?allLabel:names.length<=2?names.join(', '):names.length+' selected';
+  box.innerHTML=`<details${open?' open':''}><summary>${esc(txt)}</summary><div class="ms-panel">
+    <button type="button" class="ms-clear" data-ms-clear="${box.id}">Clear selection</button>
+    ${items.map(([k,v])=>`<label><input type="checkbox" value="${esc(k)}"${sel.has(k)?' checked':''}> ${esc(v)}</label>`).join('')}
+  </div></details>`;
+  box.querySelector('.ms-panel').scrollTop=sc;
+};
 
-  const lvSel=$('lvSel');
-  $('intChk').checked=S.int; $('wideChk').checked=S.wide; $('viewHint').textContent='Showing: '+(S.int&&S.wide?'everything, including internal events':S.int?'internal events only':S.wide?'school-wide events only (events that name no campus and no class)':'all public events for your selection');
-  lvSel.innerHTML='<option value="">All Classes</option>';
-  const allowed = S.cp.size ? campusCls() : null;
-  Object.entries(LV).filter(([k])=>!allowed||allowed.has(k)).forEach(([k,v])=>{
-    lvSel.innerHTML+=`<option value="${k}" ${S.lv.has(k)?'selected':''}>${v}</option>`;
-  });
+function renderDropdowns(){
+  const campuses=[];
+  Object.keys(CG).filter(k=>S.st.has(k)).forEach(k=>Object.entries(CG[k]).forEach(([c,v])=>campuses.push([c,v])));
+  msRender($('cpSel'),'All Campuses',campuses,S.cp);
+
+  $('intChk').checked=S.int; $('wideChk').checked=S.wide;
+  $('viewHint').textContent='Showing: '+(S.int&&S.wide?'everything, including internal events':S.int?'internal events only':S.wide?'school-wide events only (events that name no campus and no class)':'all public events for your selection');
+
+  const allowed=S.cp.size?campusCls():null;
+  msRender($('lvSel'),'All Classes',Object.entries(LV).filter(([k])=>!allowed||allowed.has(k)),S.lv);
 }
 
 function renderTabs(){
